@@ -10,15 +10,15 @@ public class InputControlled : MonoBehaviour
     protected Text speedGUI;
     protected Text thrustGUI;
 
-    public float acceleration = 100;
+    public float acceleration = 400;
     public float thrustExpo = 10;
-    public float torque = 1;
+    public float torque = 10;
     public float torqueExpo = 10;
-    public float counterDragFactor = 1;
+    public float counterDragFactor = 0.8f;
 
     public GameObject engine;
     public float lightIntensityMultiplier = 0.01f;
-    public float particleEmissionMultiplier = 0.2f;
+    public float particleEmissionMultiplier = 1.5f;
 
 
     // Use this for initialization
@@ -31,7 +31,7 @@ public class InputControlled : MonoBehaviour
 
     void Update()
     {
-        Debug.DrawLine(transform.position, transform.position + rb.velocity, Color.red);
+        //Debug.DrawLine(transform.position, transform.position + rb.velocity, Color.red);
     }
 
     // Update is called once per iteration
@@ -44,9 +44,9 @@ public class InputControlled : MonoBehaviour
         float pitchInput = Input.GetAxis("Pitch");
 
         // Apply yaw, roll and pitch
-        rb.AddRelativeTorque(Vector3.up * ApplyExpo(yawInput, torqueExpo) * torque);
-        rb.AddRelativeTorque(Vector3.forward * ApplyExpo(rollInput, torqueExpo) * torque);
-        rb.AddRelativeTorque(Vector3.left * ApplyExpo(pitchInput, torqueExpo) * torque);
+        rb.AddRelativeTorque(Vector3.up * ApplyExpo(yawInput, torqueExpo) * torque / Time.fixedDeltaTime);
+        rb.AddRelativeTorque(Vector3.forward * ApplyExpo(rollInput, torqueExpo) * torque / Time.fixedDeltaTime);
+        rb.AddRelativeTorque(Vector3.left * ApplyExpo(pitchInput, torqueExpo) * torque / Time.fixedDeltaTime);
 
         // Compute thrust
         float thrust = ApplyExpo(thrustInput, thrustExpo) * acceleration;
@@ -62,7 +62,7 @@ public class InputControlled : MonoBehaviour
 
             // Apply thrust
             thrustVector = Vector3.forward * thrust + counterDragForce;
-            rb.AddRelativeForce(thrustVector);
+            rb.AddRelativeForce(thrustVector / Time.fixedDeltaTime);
         }
         UpdateEngine(thrustVector);
 
@@ -77,6 +77,11 @@ public class InputControlled : MonoBehaviour
 
     protected void UpdateEngine(Vector3 thrustVector)
     {
+        if (null == engine)
+        {
+            return;
+        }
+
         // Change the amount of light emitted by engine
         EllipsoidParticleEmitter emitter = engine.GetComponent<EllipsoidParticleEmitter>();
         emitter.maxEmission = thrustVector.magnitude * particleEmissionMultiplier;
